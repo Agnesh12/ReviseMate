@@ -46,4 +46,7 @@ public class Topic {
     public void setRevisedDate(LocalDate revisedDate) {
         this.revisedDate = revisedDate;
     }
+    public LocalDate getRevisedDate(){
+        return revisedDate;
+    }
 }
