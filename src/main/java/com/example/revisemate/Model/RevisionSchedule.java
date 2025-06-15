@@ -4,7 +4,7 @@ package com.example.revisemate.Model;
 import jakarta.persistence.*;
 
 @Entity
-@Table
+@Table(name="revision")
 public class RevisionSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

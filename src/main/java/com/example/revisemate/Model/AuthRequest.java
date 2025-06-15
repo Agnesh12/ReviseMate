@@ -3,10 +3,12 @@ package com.example.revisemate.Model;
 public class AuthRequest {
     private String username;
     private String password;
+    private String email;
     public AuthRequest(){}
-    public AuthRequest(String username, String password) {
+    public AuthRequest(String username, String password, String email) {
         this.username = username;
         this.password = password;
+        this.email = email;
     }
     public String getUsername() {
         return username;
@@ -19,5 +21,11 @@ public class AuthRequest {
     }
     public void setPassword(String password) {
         this.password = password;
+    }
+    public String getEmail() {
+        return email;
+    }
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

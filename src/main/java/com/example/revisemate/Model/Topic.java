@@ -14,6 +14,9 @@ public class Topic {
     private String description;
     private LocalDate createdDate;
     private LocalDate revisedDate;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     public Topic(){}
     public Topic(String title, String description, LocalDate createdDate, LocalDate revisedDate ) {
@@ -22,6 +25,14 @@ public class Topic {
         this.createdDate = createdDate;
         this.revisedDate = revisedDate;
     }
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     public long getId() {
         return id;
     }
@@ -31,7 +42,7 @@ public class Topic {
     public String getTitle() {
         return title;
     }
-    public void setDescription(String discription) {
+    public void setDescription(String description) {
         this.description = description;
     }
     public String getDescription() {

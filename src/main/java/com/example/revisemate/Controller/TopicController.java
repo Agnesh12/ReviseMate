@@ -2,7 +2,11 @@ package com.example.revisemate.Controller;
 
 
 import com.example.revisemate.Model.Topic;
+import com.example.revisemate.Model.User;
 import com.example.revisemate.Repository.TopicRepository;
+import com.example.revisemate.Repository.UserRepository;
+import com.example.revisemate.Security.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +19,14 @@ import java.util.List;
 public class TopicController {
 
     private final  TopicRepository topicRepository;
-
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
 
     @Autowired
-    public TopicController(TopicRepository topicRepository) {
+    public TopicController(TopicRepository topicRepository, UserRepository userRepository, JwtService jwtService) {
+        this.userRepository = userRepository;
         this.topicRepository = topicRepository;
+        this.jwtService = jwtService;
     }
     @GetMapping("{id}")
     public ResponseEntity<Topic> getTopic(@PathVariable long id) {
@@ -31,10 +38,24 @@ public class TopicController {
        return new ResponseEntity<>(topics, HttpStatus.OK);
     }
     @PostMapping
-    public ResponseEntity<Topic> createTopic(@RequestBody Topic topic) {
-        Topic  newTopic = topicRepository.save(topic);
-        return new ResponseEntity<>(newTopic, HttpStatus.CREATED);
+    public ResponseEntity<Topic> createTopic(@RequestBody Topic topic, HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        String token = authHeader.substring(7); // Remove "Bearer "
+        String username = jwtService.extractToken(token);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        topic.setUser(user);
+
+        Topic savedTopic = topicRepository.save(topic);
+        return new ResponseEntity<>(savedTopic, HttpStatus.CREATED);
     }
+
     @PutMapping("{id}")
     public ResponseEntity<Topic> updateTopic(@PathVariable long id, @RequestBody Topic topic) {
         return topicRepository.findById(id).map(oldTopic -> {
