@@ -22,7 +22,7 @@ public class User {
         this.role = role;
         this.email = email;
     }
-    public long getId(){
+    public Long getId(){
         return id;
     }
     public void setUsername(String username) {

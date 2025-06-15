@@ -26,13 +26,13 @@ public class JwtService {
     }
 
 
-    public String extractToken(String token) {
+    public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
 
     public boolean isTokenValid(String token, String username) {
-        final String extractedName = extractToken(token);
+        final String extractedName = extractUsername(token);
         return extractedName.equals(username) && !isTokenExpired(token);
     }
 
