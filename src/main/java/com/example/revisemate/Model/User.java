@@ -3,6 +3,9 @@ package com.example.revisemate.Model;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name="users")
 public class User {
@@ -15,6 +18,9 @@ public class User {
     private String email;
     private String password;
     private String role;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RevisionSchedule> revisions = new ArrayList<>();
     public User(){}
     public User(String username, String password, String role, String email) {
         this.username = username;
