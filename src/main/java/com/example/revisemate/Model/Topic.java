@@ -10,6 +10,7 @@ public class Topic {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private long id;
+    private int notificationStage = 0;
     private String title;
     private String description;
     private LocalDate createdDate;
@@ -32,7 +33,12 @@ public class Topic {
     public void setUser(User user) {
         this.user = user;
     }
-
+    public void setNotificationStage(int notificationStage) {
+        this.notificationStage = notificationStage;
+    }
+    public int getNotificationStage() {
+        return notificationStage;
+    }
     public long getId() {
         return id;
     }
