@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,17 +31,25 @@ public class AuthController {
     private  AuthenticationManager authenticationManager;
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AuthRequest request) {
+        String username = request.getUsername().trim().toLowerCase();
+        String email = request.getEmail().trim().toLowerCase();
 
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+
+        if (userRepository.findByUsername(username).isPresent()) {
             return ResponseEntity.badRequest().body("Username already exists.");
         }
 
-        String encodedPassword = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(request.getPassword());
-        User user = new User(request.getUsername(), encodedPassword, "USER", request.getEmail());
+        if (userRepository.findByEmail(email).isPresent()) {
+            return ResponseEntity.badRequest().body("Email already exists.");
+        }
+
+        String encodedPassword = new BCryptPasswordEncoder().encode(request.getPassword());
+        User user = new User(username, encodedPassword, "USER", email);
         userRepository.save(user);
 
         return ResponseEntity.ok("User registered successfully");
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
