@@ -1,6 +1,5 @@
 package com.example.revisemate.Controller;
 
-
 import com.example.revisemate.Model.AuthRequest;
 import com.example.revisemate.Model.AuthResponse;
 import com.example.revisemate.Model.User;
@@ -11,29 +10,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.crypto.password.PasswordEncoder; // ✅ use the bean, not new BCrypt
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth/")
 public class AuthController {
 
     @Autowired
-    private  UserRepository userRepository;
+    private UserRepository userRepository;
 
     @Autowired
-    private  JwtService jwtService;
+    private JwtService jwtService;
 
     @Autowired
-    private  AuthenticationManager authenticationManager;
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder; // ✅ correct encoder bean
+
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AuthRequest request) {
         String username = request.getUsername().trim().toLowerCase();
         String email = request.getEmail().trim().toLowerCase();
-
 
         if (userRepository.findByUsername(username).isPresent()) {
             return ResponseEntity.badRequest().body("Username already exists.");
@@ -43,13 +42,12 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Email already exists.");
         }
 
-        String encodedPassword = new BCryptPasswordEncoder().encode(request.getPassword());
+        String encodedPassword = passwordEncoder.encode(request.getPassword()); // ✅ fix here
         User user = new User(username, encodedPassword, "USER", email);
         userRepository.save(user);
 
         return ResponseEntity.ok("User registered successfully");
     }
-
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
@@ -70,6 +68,4 @@ public class AuthController {
             throw new RuntimeException("Invalid login credentials");
         }
     }
-
-
 }
