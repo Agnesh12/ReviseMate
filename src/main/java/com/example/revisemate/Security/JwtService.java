@@ -7,56 +7,46 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.function.Function;
 
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String SECRET_KEY;
+    private final byte[] secretKeyBytes;
 
-
-    public String generateToken(String username) {
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date(System.currentTimeMillis())) // issued now
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // expires in 10 hours
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
-                .compact();
+    public JwtService(@Value("${jwt.secret}") String secretKey) {
+        // Initialize secretKeyBytes here inside constructor (no @PostConstruct)
+        this.secretKeyBytes = secretKey.getBytes();
     }
-
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-
-    public boolean isTokenValid(String token, String username) {
-        final String extractedName = extractUsername(token);
-        return extractedName.equals(username) && !isTokenExpired(token);
-    }
-
-
-    public boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-
-    public <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimResolver.apply(claims);
-    }
-
-
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(SECRET_KEY)
+    public <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
+        final Claims claims = Jwts.parser()
+                .setSigningKey(secretKeyBytes)
                 .parseClaimsJws(token)
                 .getBody();
+        return claimsResolver.apply(claims);
+    }
+
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .setSubject(username.trim().toLowerCase())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours
+                .signWith(SignatureAlgorithm.HS256, secretKeyBytes)
+                .compact();
+    }
+
+    public boolean isTokenValid(String token, String username) {
+        if (token == null || username == null) return false;
+        final String tokenUsername = extractUsername(token);
+        return tokenUsername.trim().equalsIgnoreCase(username.trim()) && !isTokenExpired(token);
+    }
+
+    private boolean isTokenExpired(String token) {
+        final Date expiration = extractClaim(token, Claims::getExpiration);
+        return expiration.before(new Date());
     }
 }

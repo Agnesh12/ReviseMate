@@ -6,8 +6,10 @@ import com.example.revisemate.Model.User;
 import com.example.revisemate.Repository.UserRepository;
 import com.example.revisemate.Security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder; // ✅ use the bean, not new BCrypt
@@ -50,22 +52,27 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+        String username = request.getUsername().trim().toLowerCase();
 
-        if (authentication.isAuthenticated()) {
-            User user = userRepository.findByUsername(request.getUsername())
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, request.getPassword())
+            );
+
+            // If authenticate() doesn't throw, authentication is successful
+            User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             String token = jwtService.generateToken(user.getUsername());
             return ResponseEntity.ok(new AuthResponse(token));
-        } else {
-            throw new RuntimeException("Invalid login credentials");
+        } catch (BadCredentialsException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid username or password.");
+        } catch (Exception ex) {
+            // Generic error fallback (optional)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred during login.");
         }
     }
 }

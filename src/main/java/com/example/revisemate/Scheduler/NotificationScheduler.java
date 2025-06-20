@@ -22,24 +22,35 @@ public class NotificationScheduler {
     @Autowired
     private NotificationService notificationService;
 
-    @Scheduled(cron = "0 0 8 * * ?")
-    public void sendRemainders() {
+    @Scheduled(cron = "0 0 8 * * ?") // Every day at 8 AM
+    public void sendReminders() {
         LocalDate today = LocalDate.now();
         List<Topic> topics = topicRepository.findAll();
-        for(Topic topic : topics) {
+        System.out.println("🔔 Scheduler ran on " + today);
+
+        for (Topic topic : topics) {
             User user = topic.getUser();
+            if (user == null || user.getEmail() == null) continue;
+
             LocalDate createdDate = topic.getCreatedDate();
-           long daysSinceAdded = ChronoUnit.DAYS.between(createdDate, today);
-            if(topic.getNotificationStage() == 0 && daysSinceAdded >= 3) {
+            long daysSinceAdded = ChronoUnit.DAYS.between(createdDate, today);
+
+            int stage = topic.getNotificationStage();
+
+            if (stage == 0 && daysSinceAdded >= 1) {
+                notificationService.sendReminder(user, topic, 1);
                 topic.setNotificationStage(1);
-                notificationService.sendReminder(user, topic, 3);
                 topicRepository.save(topic);
-            }
-            else if(topic.getNotificationStage() == 1 && daysSinceAdded >= 10) {
-                notificationService.sendReminder(user, topic, 10);
+            } else if (stage == 1 && daysSinceAdded >= 3) {
+                notificationService.sendReminder(user, topic, 3);
                 topic.setNotificationStage(2);
+                topicRepository.save(topic);
+            } else if (stage == 2 && daysSinceAdded >= 7) {
+                notificationService.sendReminder(user, topic, 7);
+                topic.setNotificationStage(3);
                 topicRepository.save(topic);
             }
         }
     }
+
 }
