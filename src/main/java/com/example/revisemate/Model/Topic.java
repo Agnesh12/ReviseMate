@@ -1,69 +1,55 @@
 package com.example.revisemate.Model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "topic")
 public class Topic {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    private int notificationStage = 0;
+
     private String title;
     private String description;
     private LocalDate createdDate;
-    private LocalDate revisedDate;
-    @ManyToOne
+
+    private LocalDate revisionDateDay3;
+    private LocalDate revisionDateDay7; // Ensure this field exists and is correctly mapped
+
+    @Column(name = "notification_stage", nullable = false)
+    private int notificationStage = 0;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference("user-topics")
     private User user;
 
-    public Topic(){}
-    public Topic(String title, String description, LocalDate createdDate, LocalDate revisedDate ) {
-        this.title = title;
-        this.description = description;
-        this.createdDate = createdDate;
-        this.revisedDate = revisedDate;
-    }
-    public User getUser() {
-        return user;
+    // IMPORTANT: cascade = CascadeType.ALL and orphanRemoval = true
+    // This ensures that when a Topic is deleted, its associated RevisionSchedules are also deleted.
+    @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("topic-revisions")
+    private List<RevisionSchedule> revisionSchedules = new ArrayList<>();
+
+
+    public void addRevisionSchedule(RevisionSchedule revisionSchedule) {
+        revisionSchedules.add(revisionSchedule);
+        revisionSchedule.setTopic(this);
     }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
-    public void setNotificationStage(int notificationStage) {
-        this.notificationStage = notificationStage;
-    }
-    public int getNotificationStage() {
-        return notificationStage;
-    }
-    public long getId() {
-        return id;
-    }
-    public void setTitle(String title) {
-        this.title = title;
-    }
-    public String getTitle() {
-        return title;
-    }
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    public String getDescription() {
-        return description;
-    }
-    public void setCreatedDate(LocalDate createdDate) {
-        this.createdDate = createdDate;
-    }
-    public LocalDate getCreatedDate() {
-        return createdDate;
-    }
-    public void setRevisedDate(LocalDate revisedDate) {
-        this.revisedDate = revisedDate;
-    }
-    public LocalDate getRevisedDate(){
-        return revisedDate;
+    public void removeRevisionSchedule(RevisionSchedule revisionSchedule) {
+        revisionSchedules.remove(revisionSchedule);
+        revisionSchedule.setTopic(null);
     }
 }

@@ -5,11 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableScheduling
+@EnableScheduling // This annotation enables Spring's scheduling capabilities
 public class ReviseMateApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(ReviseMateApplication.class, args);
     }
-
 }

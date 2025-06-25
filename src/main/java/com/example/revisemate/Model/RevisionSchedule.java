@@ -1,56 +1,38 @@
 package com.example.revisemate.Model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "revision")
 public class RevisionSchedule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private long id;
 
     private LocalDate revisionDate;
-
-    private boolean completed = false;
+    private boolean completed;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference("user-revisions") // Corrected: Unique name for User <-> RevisionSchedule
     private User user;
 
-    public RevisionSchedule() {}
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "topic_id", nullable = false)
+    @JsonBackReference("topic-revisions") // Corrected: Unique name for Topic <-> RevisionSchedule
+    private Topic topic;
 
-    public RevisionSchedule(LocalDate revisionDate, boolean completed) {
-        this.revisionDate = revisionDate;
-        this.completed = completed;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public LocalDate getRevisionDate() {
-        return revisionDate;
-    }
-
-    public void setRevisionDate(LocalDate revisionDate) {
-        this.revisionDate = revisionDate;
-    }
-
-    public boolean isCompleted() {
-        return completed;
-    }
-
-    public void setCompleted(boolean completed) {
-        this.completed = completed;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
+    // Getters and setters are provided by Lombok's @Data
 }
