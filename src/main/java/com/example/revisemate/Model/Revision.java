@@ -4,26 +4,28 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-// Topic.java
+// Revision.java
 @Entity
-@Table(name = "topics") @Getter
+@Table(name = "revisions") @Getter
 @Setter
 @NoArgsConstructor
-public class Topic {
+public class Revision {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(nullable = false)
-    private User user;
+    private Topic topic;
 
-    @Column(nullable = false) private String title;
-    @Column(columnDefinition = "text") private String description;
+    private Integer revisionNumber;
 
-    @CreationTimestamp
-    private LocalDateTime createdAt;
+    @Column(nullable = false) private LocalDate dueDate;
+
+    private boolean completed = false;
+    private LocalDateTime completedAt;
 }
+

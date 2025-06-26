@@ -1,42 +1,46 @@
 package com.example.revisemate.Service;
 
-import com.example.revisemate.Model.AuthRequest; // Assuming AuthRequest is in Model
-import com.example.revisemate.Model.User; // Assuming User is in Model
+import com.example.revisemate.DTO.AuthDTO;
+import com.example.revisemate.Model.User;
 import com.example.revisemate.Repository.UserRepository;
+import com.example.revisemate.Security.JwtService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // Import this if you plan more complex ops
 
+// AuthService.java
 @Service
+@RequiredArgsConstructor
 public class AuthService {
+    private final UserRepository userRepo;
+    private final PasswordEncoder passwordEncoder;   // from your existing security config
+    private final JwtService jwtService;             // you already created this
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    public AuthDTO.AuthResponse signup(AuthDTO.SignupRequest req) {
+        if (userRepo.existsByEmailIgnoreCase(req.email()))
+            throw new IllegalArgumentException("User already exists");
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        User user = new User();
+        user.setEmail(req.email().toLowerCase());
+        user.setPassword(passwordEncoder.encode(req.password()));
+        user.setName(req.name());
+        userRepo.save(user);
+        return toAuthResponse(user);
     }
 
-    @Transactional
-    public void saveUser(AuthRequest authRequest) {
+    public AuthDTO.AuthResponse login(AuthDTO.LoginRequest req) {
+        User user = userRepo.findByEmailIgnoreCase(req.email())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
-        if (userRepository.findByUsername(authRequest.getUsername().trim().toLowerCase()).isPresent()) {
-            throw new IllegalArgumentException("Username already exists.");
-        }
-        if (userRepository.findByEmail(authRequest.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already registered.");
-        }
+        if (!passwordEncoder.matches(req.password(), user.getPassword()))
+            throw new IllegalArgumentException("Invalid credentials");
 
-        User newUser = User.builder()
-                .username(authRequest.getUsername().trim().toLowerCase())
-                .password(passwordEncoder.encode(authRequest.getPassword()))
-                .email(authRequest.getEmail()) // Assuming AuthRequest has an email field
-                .role("USER") // Default role
-                .build();
-
-        userRepository.save(newUser);
+        return toAuthResponse(user);
     }
 
-
+    private AuthDTO.AuthResponse toAuthResponse(User user) {
+        String token = jwtService.generateToken(user.getId());
+        return new AuthDTO.AuthResponse(user.getId(), user.getEmail(), user.getName(), token);
+    }
 }
+

@@ -1,63 +1,77 @@
 package com.example.revisemate.Security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
+import java.security.Key;
 import java.util.Date;
 import java.util.function.Function;
 
 @Service
 public class JwtService {
 
-    private final SecretKey secretKey;
+    @Value("${jwt.secret}")
+    private String secretKeyBase64;         // Base64-encoded secret from properties
 
-    public JwtService(@Value("${jwt.secret:default_super_long_test_key_12345678901234567890}") String secretKeyString) {
-        System.out.println("🔐 JWT Secret received (first 10 chars): " + secretKeyString.substring(0, Math.min(secretKeyString.length(), 10)) + "...");
-        System.out.println("🔑 JWT Secret length: " + secretKeyString.length());
+    private Key signInKey;                  // initialized once at startup
+    private static final long EXP_MS = 1000 * 60 * 60 * 24; // 24 h
 
-        if (secretKeyString.length() < 32) {
-            throw new IllegalArgumentException("❌ JWT secret key must be at least 32 characters long");
-        }
-
-        this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
-        System.out.println("✅ JwtService initialized successfully");
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKeyBase64);
+        this.signInKey = Keys.hmacShaKeyFor(keyBytes);      // ≥256-bit key
     }
 
-    public String generateToken(String username) {
+    /* ---------- token generation ---------- */
+
+    public String generateToken(Long userId) {
+        long now = System.currentTimeMillis();
         return Jwts.builder()
-                .setSubject(username.trim().toLowerCase())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .setSubject(String.valueOf(userId))         // <-- store userId here
+                .setIssuedAt(new Date(now))
+                .setExpiration(new Date(now + EXP_MS))
+                .signWith(signInKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public boolean isTokenValid(String token, String username) {
-        if (token == null || username == null) return false;
-        final String tokenUsername = extractUsername(token);
-        return tokenUsername.trim().equalsIgnoreCase(username.trim()) && !isTokenExpired(token);
+    /* ---------- extraction helpers ---------- */
+
+    public Long extractUserId(String token) {
+        return Long.parseLong(extractClaim(token, Claims::getSubject));
     }
 
-    private boolean isTokenExpired(String token) {
-        final Date expiration = extractClaim(token, Claims::getExpiration);
-        return expiration.before(new Date());
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
     }
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
+    public <T> T extractClaim(String token, Function<Claims,T> resolver) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(signInKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claimsResolver.apply(claims);
+        return resolver.apply(claims);
+    }
+
+    /* ---------- validation ---------- */
+
+    public boolean isTokenValid(String token, Long expectedUserId) {
+        return expectedUserId.equals(extractUserId(token)) && !isExpired(token);
+    }
+
+    private boolean isExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    /* ---------- convenience ---------- */
+
+    public String resolveToken(HttpServletRequest request) {
+        String hdr = request.getHeader("Authorization");
+        return (hdr != null && hdr.startsWith("Bearer ")) ? hdr.substring(7) : null;
     }
 }
