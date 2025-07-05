@@ -27,14 +27,24 @@ public class TopicController {
         topic.setCreatedAt(LocalDateTime.now());
         Topic savedTopic = topicRepository.save(topic);
 
-        int[] revisionDays = {1, 3, 7};
-        for (int i = 0; i < revisionDays.length; i++) {
+        // This array now defines the *incremental* days for subsequent revisions
+        int[] revisionIncrements = {1, 3, 7};
+
+        // Start the due date calculation from the topic creation time (or now)
+        LocalDateTime currentDueDate = LocalDateTime.now();
+
+        for (int i = 0; i < revisionIncrements.length; i++) {
+            int daysToAdd = revisionIncrements[i];
+
+            // Increment the currentDueDate by the specified number of days
+            currentDueDate = currentDueDate.plusDays(daysToAdd);
+
             Revision r = new Revision();
             r.setTopic(savedTopic);
             r.setRevisionNumber(i + 1);
-            r.setDueDate(LocalDateTime.now().plusDays(revisionDays[i]));
+            r.setDueDate(currentDueDate); // Set the calculated due date
             r.setCompleted(0);
-            r.setCreatedAt(LocalDateTime.now());
+            r.setCreatedAt(LocalDateTime.now()); // The creation time of this specific revision record
             revisionRepository.save(r);
         }
 

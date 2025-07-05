@@ -6,17 +6,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
 
-/**
- * Runs exactly once per request (Spring Security‑aware) and:
- *   • Skips public auth routes and CORS pre‑flight OPTIONS requests
- *   • Validates “Authorization: Bearer …” tokens
- *   • Injects userId into the request for downstream controllers
- */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -32,28 +29,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain chain)
             throws ServletException, IOException {
 
-        /* ──────────────────────────────────────────────
-         *  1. Allow CORS pre‑flight and public routes
-         * ────────────────────────────────────────────── */
-        String path   = request.getRequestURI();
+        String path = request.getRequestURI();
         String method = request.getMethod();
 
-        // CORS pre‑flight (OPTIONS) = always OK
+        // Allow CORS pre-flight and public auth routes
         if ("OPTIONS".equalsIgnoreCase(method)) {
             response.setStatus(HttpServletResponse.SC_OK);
             chain.doFilter(request, response);
             return;
         }
 
-        // Public auth endpoints = skip JWT check
         if (path.startsWith("/api/auth")) {
             chain.doFilter(request, response);
             return;
         }
 
-        /* ──────────────────────────────────────────────
-         *  2. Extract and validate Bearer token
-         * ────────────────────────────────────────────── */
+        // Validate Bearer token
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -62,11 +53,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             try {
                 Long userId = jwtUtil.validateTokenAndGetUserId(token); // throws if invalid/expired
 
-                // Make userId available to controllers
+                // Make userId available in request
                 request.setAttribute("userId", userId);
 
-                // If you need Spring Security context (roles, etc.) set it here
-                // (omitted for brevity since your app doesn't use roles yet)
+                // ✅ Set Spring Security context (authentication)
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userId,           // principal (can be a full user object later)
+                                null,             // no credentials
+                                Collections.emptyList() // no roles for now
+                        );
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 chain.doFilter(request, response);
                 return;
@@ -77,7 +75,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
 
-        // No token → 401
+        // No token = 401 Unauthorized
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token required");
     }
 }
