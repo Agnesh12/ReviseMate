@@ -1,30 +1,50 @@
 package com.example.revisemate.Controller;
 
-import com.example.revisemate.DTO.TopicDTO;
-import com.example.revisemate.Service.TopicService;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.example.revisemate.Model.*;
+import com.example.revisemate.Repository.*;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/topics") @RequiredArgsConstructor
-@SecurityRequirement(name = "bearerAuth")   // if you’re using springdoc-openapi
+@RequestMapping("/api/topics")
 public class TopicController {
-    private final TopicService topicService;
+
+    @Autowired private TopicRepository topicRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private RevisionRepository revisionRepository;
 
     @PostMapping
-    public TopicDTO.TopicResponse create(@AuthenticationPrincipal Long userId,
-                                         @Valid @RequestBody TopicDTO.TopicCreateRequest req) {
-        return topicService.createTopic(userId, req);
+    public ResponseEntity<?> createTopic(@RequestBody Topic topic, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        User user = userRepository.findById(userId).orElseThrow();
+
+        topic.setUser(user);
+        topic.setCreatedAt(LocalDateTime.now());
+        Topic savedTopic = topicRepository.save(topic);
+
+        int[] revisionDays = {1, 3, 7};
+        for (int i = 0; i < revisionDays.length; i++) {
+            Revision r = new Revision();
+            r.setTopic(savedTopic);
+            r.setRevisionNumber(i + 1);
+            r.setDueDate(LocalDateTime.now().plusDays(revisionDays[i]));
+            r.setCompleted(0);
+            r.setCreatedAt(LocalDateTime.now());
+            revisionRepository.save(r);
+        }
+
+        return ResponseEntity.status(201).body(savedTopic);
     }
 
     @GetMapping
-    public List<TopicDTO.TopicResponse> list(@AuthenticationPrincipal Long userId) {
-        return topicService.listTopics(userId);
+    public ResponseEntity<?> getTopics(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        List<Topic> topics = topicRepository.findByUserId(userId);
+        return ResponseEntity.ok(topics);
     }
 }
-

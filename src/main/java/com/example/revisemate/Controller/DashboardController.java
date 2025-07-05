@@ -1,23 +1,40 @@
 package com.example.revisemate.Controller;
 
-import com.example.revisemate.DTO.DashboardDTO;
-import com.example.revisemate.Service.DashboardService;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.revisemate.Model.*;
+import com.example.revisemate.Repository.*;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/dashboard") @RequiredArgsConstructor
-@SecurityRequirement(name = "bearerAuth")
+@RequestMapping("/api/dashboard")
 public class DashboardController {
-    private final DashboardService dashboardService;
+
+    @Autowired private TopicRepository topicRepository;
+    @Autowired private RevisionRepository revisionRepository;
 
     @GetMapping("/stats")
-    public DashboardDTO.DashboardStats stats(@AuthenticationPrincipal Long userId) {
-        return dashboardService.stats(userId);
+    public ResponseEntity<?> getStats(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        LocalDateTime today = LocalDateTime.now();
+
+        long totalTopics = topicRepository.findByUserId(userId).size();
+
+        long todayRevisions = revisionRepository.findByDueDateBeforeAndCompleted(today, 0).stream()
+                .filter(r -> r.getTopic().getUser().getId().equals(userId)).count();
+
+        long completedRevisions = revisionRepository.findByCompleted(1).stream()
+                .filter(r -> r.getTopic().getUser().getId().equals(userId)).count();
+
+        return ResponseEntity.ok(Map.of(
+                "totalTopics", totalTopics,
+                "todayRevisions", todayRevisions,
+                "completedRevisions", completedRevisions
+        ));
     }
 }
-
