@@ -31,11 +31,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors() // ✅ Enable CORS
+                .cors()                                           // enable CORS
                 .and()
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()  // public auth endpoints
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class)
@@ -45,20 +45,22 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** ✅ Global CORS config: allow Cloudflare Pages + localhost */
+    /** Global CORS config: localhost + any *.pages.dev sub‑domain */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "https://revisemate.pages.dev"
+        // Use patterns so every preview build domain matches
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "https://*.pages.dev"
+                // add your custom domain here if/when you have one
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Authorization")); // Optional: expose token headers
-        config.setAllowCredentials(true); // Important if using cookies / JWT
+        config.setExposedHeaders(List.of("Authorization"));   // expose token header if needed
+        config.setAllowCredentials(true);                     // keep true if sending cookies/JWTs
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
