@@ -3,7 +3,7 @@ package com.example.revisemate.DTO;
 public class TokenRefreshRequest {
     private String refreshToken;
 
-    // === Getter and Setter ===
+
 
     public String getRefreshToken() {
         return refreshToken;

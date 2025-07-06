@@ -18,9 +18,9 @@ public class JwtUtil {
     @Value("${refresh.token.duration.ms}")
     private long refreshTokenDurationMs;
 
-    private static final long ACCESS_TOKEN_DURATION_MS = 15 * 60 * 1000; // 15 min
+    private static final long ACCESS_TOKEN_DURATION_MS = 15 * 60 * 1000;
 
-    /* ------------ INTERNAL ------------ */
+
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
@@ -35,7 +35,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    /* ------------ PUBLIC API ------------ */
+
     public String generateAccessToken(Long userId)  { return buildToken(userId, ACCESS_TOKEN_DURATION_MS); }
     public String generateRefreshToken(Long userId) { return buildToken(userId, refreshTokenDurationMs);  }
 

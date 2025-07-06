@@ -13,7 +13,7 @@ public class JwtResponse {
         this.user         = user;
     }
 
-    // === Getters and Setters ===
+
 
     public String getAccessToken() {
         return accessToken;

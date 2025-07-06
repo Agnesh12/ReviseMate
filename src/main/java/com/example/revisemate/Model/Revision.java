@@ -29,7 +29,6 @@ public class Revision {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    // Getters and Setters
 
     public Long getId() {
         return id;

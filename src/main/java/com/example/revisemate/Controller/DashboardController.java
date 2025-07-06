@@ -21,10 +21,10 @@ public class DashboardController {
     public ResponseEntity<?> getStats(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
 
-        // Calculate total topics for the user (efficient as it's a direct query)
-        long totalTopics = topicRepository.countByUserId(userId); // Assuming you add countByUserId to TopicRepository
 
-        // Calculate revisions due today for the user
+        long totalTopics = topicRepository.countByUserId(userId);
+
+
         LocalDateTime todayStart = LocalDateTime.now().toLocalDate().atStartOfDay();
         LocalDateTime todayEnd = todayStart.plusDays(1).minusNanos(1);
 
@@ -35,7 +35,7 @@ public class DashboardController {
                 userId
         );
 
-        // Calculate completed revisions for the user
+
         long completedRevisions = revisionRepository.countByCompletedAndTopic_User_Id(
                 1, // Completed
                 userId

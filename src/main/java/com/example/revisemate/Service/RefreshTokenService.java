@@ -28,23 +28,18 @@ public class RefreshTokenService {
         this.userRepository = userRepository;
     }
 
-    /* ────────────────────────────────────────── *
-     *  look‑up helpers
-     * ────────────────────────────────────────── */
+
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);
     }
 
-    /* ────────────────────────────────────────── *
-     *  create OR update a refresh‑token for user
-     *  (one‑token‑per‑user constraint)
-     * ────────────────────────────────────────── */
+
     public RefreshToken createRefreshToken(Long userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        /* upsert logic */
+
         RefreshToken refreshToken = refreshTokenRepository
                 .findByUserId(userId)
                 .orElseGet(RefreshToken::new);   // empty instance if none exists
@@ -56,9 +51,7 @@ public class RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
-    /* ────────────────────────────────────────── *
-     *  verify token still valid or throw
-     * ────────────────────────────────────────── */
+
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().isBefore(Instant.now())) {
             refreshTokenRepository.delete(token);
@@ -67,9 +60,7 @@ public class RefreshTokenService {
         return token;
     }
 
-    /* ────────────────────────────────────────── *
-     *  delete all tokens for a user (e.g., logout‑all)
-     * ────────────────────────────────────────── */
+
     @Transactional
     public int deleteByUserId(Long userId) {
         User user = userRepository.findById(userId)

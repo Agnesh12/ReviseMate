@@ -35,7 +35,7 @@ public class AuthController {
         this.refreshTokenService = refreshTokenService;
     }
 
-    /* ---------- SIGN‑UP ---------- */
+
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody Map<String, String> payload) {
 
@@ -65,7 +65,7 @@ public class AuthController {
                 .body(new JwtResponse(accessToken, refreshToken, user));
     }
 
-    /* ---------- LOGIN ---------- */
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> payload) {
         String email = payload.get("email").toLowerCase().trim();
@@ -99,7 +99,7 @@ public class AuthController {
         return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken, user));
     }
 
-    /* ---------- REFRESH TOKEN ---------- */
+
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody TokenRefreshRequest request) {
 

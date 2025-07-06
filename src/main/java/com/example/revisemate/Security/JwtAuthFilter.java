@@ -32,7 +32,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        // Allow CORS pre-flight and public auth routes
+
         if ("OPTIONS".equalsIgnoreCase(method)) {
             response.setStatus(HttpServletResponse.SC_OK);
             chain.doFilter(request, response);
@@ -44,24 +44,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Validate Bearer token
+
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
             try {
-                Long userId = jwtUtil.validateTokenAndGetUserId(token); // throws if invalid/expired
+                Long userId = jwtUtil.validateTokenAndGetUserId(token);
 
-                // Make userId available in request
+
                 request.setAttribute("userId", userId);
 
-                // ✅ Set Spring Security context (authentication)
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userId,           // principal (can be a full user object later)
-                                null,             // no credentials
-                                Collections.emptyList() // no roles for now
+                                userId,
+                                null,
+                                Collections.emptyList()
                         );
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -75,7 +75,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
 
-        // No token = 401 Unauthorized
+
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token required");
     }
 }
