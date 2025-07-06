@@ -39,16 +39,16 @@
 
 ## 📸 Screenshots
 ### 🔹 Dashboard
-![Dashboard](./assets/dashboard.png)
+![Dashboard](.src/assets/dashboard.png)
 
 ### 🔹 Add Topic
-![Add Topic](./assets/add-topic.png)
+![Add Topic](.src/assets/add-topic.png)
 
 ### 🔹 Login Page
-![Login](./assets/login.png)
+![Login](.src/assets/login.png)
 
-### 🔹 Login Page
-![Revisions](./assets/revisions.png)
+### 🔹 Revisions Page
+![Revisions](.src/assets/revisions.png)
 ## 📦 Setup Instructions
 
 ### Backend
